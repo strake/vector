@@ -1,5 +1,9 @@
 {-# LANGUAGE CPP, DeriveDataTypeable, MultiParamTypeClasses, FlexibleInstances, BangPatterns, TypeFamilies #-}
 
+#if __GLASGOW_HASKELL__ >= 708
+{-# LANGUAGE RoleAnnotations #-}
+#endif
+
 -- |
 -- Module      : Data.Vector.Mutable
 -- Copyright   : (c) Roman Leshchinskiy 2008-2010
@@ -61,6 +65,10 @@ import Prelude hiding ( length, null, replicate, reverse, read,
 import Data.Typeable ( Typeable )
 
 #include "vector.h"
+
+#if __GLASGOW_HASKELL__ >= 708
+type role MVector nominal representational
+#endif
 
 -- | Mutable boxed vectors keyed on the monad they live in ('IO' or @'ST' s@).
 data MVector s a = MVector {-# UNPACK #-} !Int
@@ -203,8 +211,12 @@ null = G.null
 -- Extracting subvectors
 -- ---------------------
 
--- | Yield a part of the mutable vector without copying it.
-slice :: Int -> Int -> MVector s a -> MVector s a
+-- | Yield a part of the mutable vector without copying it. The vector must
+-- contain at least @i+n@ elements.
+slice :: Int  -- ^ @i@ starting index
+      -> Int  -- ^ @n@ length
+      -> MVector s a
+      -> MVector s a
 {-# INLINE slice #-}
 slice = G.slice
 

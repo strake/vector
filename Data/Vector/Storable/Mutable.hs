@@ -1,5 +1,9 @@
 {-# LANGUAGE CPP, DeriveDataTypeable, FlexibleInstances, MagicHash, MultiParamTypeClasses, ScopedTypeVariables #-}
 
+#if __GLASGOW_HASKELL__ >= 708
+{-# LANGUAGE RoleAnnotations #-}
+#endif
+
 -- |
 -- Module      : Data.Vector.Storable.Mutable
 -- Copyright   : (c) Roman Leshchinskiy 2009-2010
@@ -57,7 +61,11 @@ module Data.Vector.Storable.Mutable(
   unsafeWith
 ) where
 
-import Control.DeepSeq ( NFData(rnf) )
+import Control.DeepSeq ( NFData(rnf)
+#if MIN_VERSION_deepseq(1,4,3)
+                       , NFData1(liftRnf)
+#endif
+                       )
 
 import qualified Data.Vector.Generic.Mutable as G
 import Data.Vector.Storable.Internal
@@ -93,6 +101,10 @@ import Data.Typeable ( Typeable )
 #define NOT_VECTOR_MODULE
 #include "vector.h"
 
+#if __GLASGOW_HASKELL__ >= 708
+type role MVector nominal representational
+#endif
+
 -- | Mutable 'Storable'-based vectors
 data MVector s a = MVector {-# UNPACK #-} !Int
                            {-# UNPACK #-} !(ForeignPtr a)
@@ -103,6 +115,11 @@ type STVector s = MVector s
 
 instance NFData (MVector s a) where
   rnf (MVector _ _) = ()
+
+#if MIN_VERSION_deepseq(1,4,3)
+instance NFData1 (MVector s) where
+  liftRnf _ (MVector _ _) = ()
+#endif
 
 instance Storable a => G.MVector MVector a where
   {-# INLINE basicLength #-}
@@ -246,8 +263,13 @@ null = G.null
 -- Extracting subvectors
 -- ---------------------
 
--- | Yield a part of the mutable vector without copying it.
-slice :: Storable a => Int -> Int -> MVector s a -> MVector s a
+-- | Yield a part of the mutable vector without copying it. The vector must
+-- contain at least @i+n@ elements.
+slice :: Storable a
+      => Int  -- ^ @i@ starting index
+      -> Int  -- ^ @n@ length
+      -> MVector s a
+      -> MVector s a
 {-# INLINE slice #-}
 slice = G.slice
 

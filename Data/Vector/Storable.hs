@@ -1,5 +1,9 @@
 {-# LANGUAGE CPP, DeriveDataTypeable, MultiParamTypeClasses, FlexibleInstances, TypeFamilies, Rank2Types, ScopedTypeVariables #-}
 
+#if __GLASGOW_HASKELL__ >= 708
+{-# LANGUAGE RoleAnnotations #-}
+#endif
+
 -- |
 -- Module      : Data.Vector.Storable
 -- Copyright   : (c) Roman Leshchinskiy 2009-2010
@@ -149,7 +153,11 @@ import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Marshal.Array ( advancePtr, copyArray )
 
-import Control.DeepSeq ( NFData(rnf) )
+import Control.DeepSeq ( NFData(rnf)
+#if MIN_VERSION_deepseq(1,4,3)
+                       , NFData1(liftRnf)
+#endif
+                       )
 
 import Control.Monad.ST ( ST )
 import Control.Monad.Primitive
@@ -186,6 +194,10 @@ import qualified GHC.Exts as Exts
 #define NOT_VECTOR_MODULE
 #include "vector.h"
 
+#if __GLASGOW_HASKELL__ >= 708
+type role Vector representational
+#endif
+
 -- | 'Storable'-based vectors
 data Vector a = Vector {-# UNPACK #-} !Int
                        {-# UNPACK #-} !(ForeignPtr a)
@@ -193,6 +205,11 @@ data Vector a = Vector {-# UNPACK #-} !Int
 
 instance NFData (Vector a) where
   rnf (Vector _ _) = ()
+
+#if MIN_VERSION_deepseq(1,4,3)
+instance NFData1 Vector where
+  liftRnf _ (Vector _ _) = ()
+#endif
 
 instance (Show a, Storable a) => Show (Vector a) where
   showsPrec = G.showsPrec

@@ -508,8 +508,13 @@ null v = length v == 0
 -- Extracting subvectors
 -- ---------------------
 
--- | Yield a part of the mutable vector without copying it.
-slice :: MVector v a => Int -> Int -> v s a -> v s a
+-- | Yield a part of the mutable vector without copying it. The vector must
+-- contain at least @i+n@ elements.
+slice :: MVector v a
+      => Int  -- ^ @i@ starting index
+      -> Int  -- ^ @n@ length
+      -> v s a
+      -> v s a
 {-# INLINE slice #-}
 slice i n v = BOUNDS_CHECK(checkSlice) "slice" i n (length v)
             $ unsafeSlice i n v
@@ -711,7 +716,7 @@ swap v i j = BOUNDS_CHECK(checkIndex) "swap" i (length v)
            $ BOUNDS_CHECK(checkIndex) "swap" j (length v)
            $ unsafeSwap v i j
 
--- | Replace the element at the give position and return the old element.
+-- | Replace the element at the given position and return the old element.
 exchange :: (PrimMonad m, MVector v a) => v (PrimState m) a -> Int -> a -> m a
 {-# INLINE exchange #-}
 exchange v i x = BOUNDS_CHECK(checkIndex) "exchange" i (length v)
@@ -749,7 +754,7 @@ unsafeSwap v i j = UNSAFE_CHECK(checkIndex) "unsafeSwap" i (length v)
                      unsafeWrite v i y
                      unsafeWrite v j x
 
--- | Replace the element at the give position and return the old element. No
+-- | Replace the element at the given position and return the old element. No
 -- bounds checks are performed.
 unsafeExchange :: (PrimMonad m, MVector v a)
                                 => v (PrimState m) a -> Int -> a -> m a
