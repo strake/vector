@@ -164,10 +164,10 @@ module Data.Vector (
   freeze, thaw, copy, unsafeFreeze, unsafeThaw, unsafeCopy
 ) where
 
-import qualified Data.Vector.Generic as G
-import           Data.Vector.Mutable  ( MVector(..) )
-import           Data.Primitive.Array
+import Data.Vector.Mutable  ( MVector(..) )
+import Data.Primitive.Array
 import qualified Data.Vector.Fusion.Bundle as Bundle
+import qualified Data.Vector.Generic as G
 
 import Control.DeepSeq ( NFData(rnf)
 #if MIN_VERSION_deepseq(1,4,3)
@@ -178,7 +178,7 @@ import Control.DeepSeq ( NFData(rnf)
 import Control.Monad ( MonadPlus(..), liftM, ap )
 import Control.Monad.ST ( ST )
 import Control.Monad.Primitive
-
+import qualified Control.Monad.Fail as Fail
 
 import Control.Monad.Zip
 
@@ -353,6 +353,12 @@ instance Monad Vector where
   {-# INLINE (>>=) #-}
   (>>=) = flip concatMap
 
+#if !(MIN_VERSION_base(4,13,0))
+  {-# INLINE fail #-}
+  fail = Fail.fail -- == \ _str -> empty
+#endif
+
+instance Fail.MonadFail Vector where
   {-# INLINE fail #-}
   fail _ = empty
 
